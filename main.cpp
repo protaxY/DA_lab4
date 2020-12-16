@@ -1,98 +1,125 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+//#include <map>
+#include <unordered_map>
+#include <cctype>
 
-const unsigned short MAX_WORD_SIZE = 16;
-
-bool WordEqual(const char* lhs, const char* rhs){
-    for (int i = 0; i < MAX_WORD_SIZE; ++i){
-        if (lhs[i] != rhs[i]){
-            return false;
-        }
-    }
-    return true;
-}
-
-void CalculateGoodSuffix(std::vector<char*> &pattern, std::vector<int> &reverseZ){
-    for (int i = 0; i < reverseZ; ++i){
+void CalculateGoodSuffix(std::vector<std::string> &pattern, std::vector<int> &l){
+    std::vector<int> reverseZ(pattern.size());
+    for (int i = 0; i < reverseZ.size(); ++i){
         reverseZ[i] = 0;
     }
     for (int i = pattern.size() - 2; i >= 0; --i){
         int cnt = 0;
-        //int res = 0;
-        while (i - cnt >= 0 && WordEqual(pattern[i - cnt], pattern[pattern.size() - 1 - cnt])){
+        while (i - cnt >= 0 && pattern[i - cnt] == pattern[pattern.size() - 1 - cnt]){
             ++cnt;
         }
         reverseZ[i] = cnt;
     }
-    for (int i = 0; i < pattern.size(); ++i){
-        std::cout << reverseZ[i] << " ";
+    std::reverse(reverseZ.begin(), reverseZ.end());
+    int j;
+    for (int i = 0; i < pattern.size() - 1; ++i){
+        j = pattern.size() - reverseZ[i];
+        l[j] = i;
     }
-    std::cout << "\n";
+    std::vector<int> L(pattern.size() + 1, pattern.size());
+    for (int i = pattern.size() - 1; i >= 0; --i){
+        j = pattern.size() - i;
+        if (reverseZ[j - 1] == j){
+            L[i] = j - 1;
+        } else {
+            L[i] = L[i + 1];
+        }
+    }
+    for (int i = 0; i < pattern.size() + 1; ++i){
+        if (l[i] == pattern.size()){
+            l[i] = L[i];
+        }
+    }
+    for (int i = 0; i < l.size(); ++i){
+        if (l[i] != pattern.size()){
+            l[i] = pattern.size() - l[i] - 1;
+        }
+    }
 }
 
-void CalculateBadSymbol(std::vector<char*> &pattern, std::vector<int> ){
-
+void CalculateBadSymbol(std::vector<std::string> &pattern, std::unordered_map<std::string, int> &r){
+    for (int i = 0; i < pattern.size() - 1; ++i){
+        r[pattern[i]] = i;
+    }
 }
 
 int main() {
-    std::vector<char*> pattern;
-    char curChar = 0;
-    char* curWord = new char[MAX_WORD_SIZE];
-    for (int i = 0; i < MAX_WORD_SIZE; ++i){
-        curWord[i] = 0;
-    }
-    unsigned int cnt = 0;
-
-    while (scanf("%c", &curChar) > 0){
-        curChar = (char)tolower(curChar);
-        if (curChar == ' '){
-            cnt = 0;
-            pattern.push_back(curWord);
-            curWord = new char[MAX_WORD_SIZE];
-            for (int i = 0; i < MAX_WORD_SIZE; ++i){
-                curWord[i] = 0;
-            }
-        } else if (curChar == '\n'){
-            cnt = 0;
-            pattern.push_back(curWord);
+    std::vector<std::string> pattern;
+    char tmpChar;
+    std::string tmpString;
+    while (scanf("%c", &tmpChar)){
+        if (tmpChar == ' '){
+            pattern.push_back(tmpString);
+            tmpString.clear();
+        } else if (tmpChar == '\n'){
+            pattern.push_back(tmpString);
+            tmpString.clear();
             break;
         } else {
-            curWord[cnt] = curChar;
-            ++cnt;
+            tmpString += std::tolower(tmpChar);
         }
     }
-    for (int i = 0; i < pattern.size(); ++i){
-        std::cout << pattern[i] << ' ';
-    }
-    std::cout << "\n";
-    CalculateGoodSuffix(pattern);
 
+//    for (int i = 0; i < pattern.size(); ++i){
+//        std::cout << pattern[i] << " ";
+//    }
+//    std::cout << "\n";
 
-    std::vector<char*> text;
-    cnt = 0;
-    curWord = new char[MAX_WORD_SIZE];
-    for (int i = 0; i < MAX_WORD_SIZE; ++i){
-        curWord[i] = 0;
-    }
-    while (scanf("%c", &curChar) > 0){
-        if (curChar == ' '){
-            cnt = 0;
-            text.push_back(curWord);
-            curWord = new char[MAX_WORD_SIZE];
-            for (int i = 0; i < MAX_WORD_SIZE; ++i){
-                curWord[i] = 0;
-            }
-        } else if (curChar == '\n'){
-            cnt = 0;
-            text.push_back(curWord);
-//            for (int i = 0; i < text.size(); ++i){
-//                std::cout << text[i] << ' ';
-//            }
-            break;
-        } else {
-            curWord[cnt] = curChar;
+    std::vector<int> l(pattern.size() + 1);
+    CalculateGoodSuffix(pattern, l);
+    std::unordered_map<std::string, int> r;
+    CalculateBadSymbol(pattern, r);
+
+//    for (int i = 0; i < pattern.size(); ++i){
+//        std::cout << l[i] << " ";
+//    }
+//    std::cout << "\n";
+
+    int cnt = 0;
+    std::vector<std::string> text;
+    while (scanf("%c", &tmpChar)){
+        if (tmpChar == ' '){
+            text.push_back(tmpString);
+            tmpString.clear();
+        } else if (tmpChar == '\n'){
             ++cnt;
+            text.push_back(tmpString);
+            tmpString.clear();
+            if (text.size() < pattern.size()){
+                continue;
+            } else {
+                int shift;
+                int bound = 0;
+                int j;
+                for (int i = 0; i < text.size() - pattern.size() + 1;){
+                    //int k = pattern.size() - 1;
+                    for (j = pattern.size() - 1; j >= 0; --j){
+                        if (text[i + j] != pattern[j]){
+                            break;
+                        }
+                    }
+                    if (j < bound){
+                        std::cout << cnt << ", " << i + 1 << '\n';
+                        bound = pattern.size() - l[0];
+                        j = -1;
+                        shift = l[0];
+                    } else {
+                        bound = 0;
+                        shift = std::max({1, l[j + 1], j - r[text[i + j]]});
+                    }
+                    i += shift;
+                }
+            }
+            text.clear();
+        } else {
+            tmpString += std::tolower(tmpChar);
         }
     }
 
